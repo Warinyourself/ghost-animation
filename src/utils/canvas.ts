@@ -2,35 +2,41 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import { Camera, Scene } from "three";
+import { Camera, Scene, Mesh } from "three";
 import { buildAxios, buildGrid } from "./position";
-import { setBreatheAnimation } from "./animations";
+import {
+  animationsCallback,
+  setBreatheAnimation,
+  setHeartAnimation
+} from "./animations";
+
 let controls: any;
 let camera: Camera, scene: Scene, renderer: any;
 const isDebugMode = true;
-const showHelpers = false;
+const showHelpers = true;
 
 const ghostName = "Sphere001";
 const heartName = "Heart001";
 
 function animation(time: number) {
-  controls.update();
-
   time += 0.01;
+
+  // console.log({ animationsCallback });
+  animationsCallback.forEach(callback => callback(time));
 
   renderer.render(scene, camera);
 }
 
 export function init(canvas?: HTMLCanvasElement) {
   camera = new THREE.PerspectiveCamera(
-    70,
+    80,
     window.innerWidth / window.innerHeight,
     0.01,
     30
   );
-  camera.position.z = 10;
-  camera.position.y = 0;
-  camera.rotateX(-1);
+  // todo: set right camera position
+  camera.position.x = 3;
+  camera.position.y = 1;
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x171717);
@@ -49,6 +55,7 @@ export function init(canvas?: HTMLCanvasElement) {
   controls.screenSpacePanning = false;
   controls.minDistance = 2;
   controls.maxDistance = 10;
+  controls.update();
 
   controls.maxPolarAngle = Math.PI / 2.1;
 
@@ -62,11 +69,19 @@ export function init(canvas?: HTMLCanvasElement) {
 
   loader.load("Ghost.gltf", gltf => {
     scene.add(gltf.scene);
-    console.log({ gltf });
-    gltf.scene.traverse(mesh => {
+
+    gltf.scene.traverse(object => {
+      const mesh = object as Mesh;
       console.log({ mesh });
+
       if (mesh.name === ghostName) {
+        mesh.geometry.center();
         setBreatheAnimation(mesh);
+      } else if (mesh.name === heartName) {
+        const heartSize = 0.15;
+        setHeartAnimation(mesh);
+        mesh.material = new THREE.MeshNormalMaterial();
+        mesh.scale.set(heartSize, heartSize, heartSize);
       }
     });
   });
