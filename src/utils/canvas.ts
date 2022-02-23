@@ -9,20 +9,25 @@ import {
   setBreatheAnimation,
   setHeartAnimation
 } from "./animations";
+import { generateParticles, particlesAnimate } from "./particles";
+import { buildLight } from "./light";
 
 let controls: any;
 let camera: Camera, scene: Scene, renderer: any;
 const isDebugMode = true;
-const showHelpers = true;
+const showHelpers = false;
+const showParticles = false;
 
-const ghostName = "Sphere001";
-const heartName = "Heart001";
+const heartName = "Heart";
 
 function animation(time: number) {
   time += 0.01;
 
-  // console.log({ animationsCallback });
   animationsCallback.forEach(callback => callback(time));
+
+  if (showParticles) {
+    particlesAnimate(time);
+  }
 
   renderer.render(scene, camera);
 }
@@ -39,7 +44,7 @@ export function init(canvas?: HTMLCanvasElement) {
   camera.position.y = 1;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x171717);
+  scene.background = new THREE.Color(0x999999);
 
   if (isDebugMode && showHelpers) {
     buildGrid(scene);
@@ -59,31 +64,37 @@ export function init(canvas?: HTMLCanvasElement) {
 
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  const skyColor = 0xb1e1ff; // light blue
-  const groundColor = 0xb97a20; // brownish orange
-  const intensity = 1;
-  const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
-  scene.add(light);
+  if (showParticles) {
+    generateParticles(scene);
+  }
+
+  buildLight(scene);
+
+  const group = new THREE.Group();
+  scene.add(group);
 
   const loader = new GLTFLoader().setPath("/");
 
   loader.load("Ghost.gltf", gltf => {
-    scene.add(gltf.scene);
-
-    gltf.scene.traverse(object => {
-      const mesh = object as Mesh;
-      console.log({ mesh });
-
-      if (mesh.name === ghostName) {
-        mesh.geometry.center();
-        setBreatheAnimation(mesh);
-      } else if (mesh.name === heartName) {
+    gltf.scene.children.forEach(mesh => {
+      if (mesh.name === heartName) {
+        setTimeout(() => {
+          scene.add(mesh);
+        });
         const heartSize = 0.15;
         setHeartAnimation(mesh);
-        mesh.material = new THREE.MeshNormalMaterial();
         mesh.scale.set(heartSize, heartSize, heartSize);
+      } else {
+        setTimeout(() => {
+          group.add(mesh);
+        });
       }
     });
+
+    setBreatheAnimation(group);
+
+    console.log({ group });
+    console.log({ child: gltf.scene.children });
   });
 
   if (!canvas) {
