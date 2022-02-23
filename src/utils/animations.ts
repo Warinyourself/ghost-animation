@@ -31,15 +31,14 @@ export function sinAnimation({
 }
 
 export function setBreatheAnimation(mesh: THREE.Object3D<THREE.Event>) {
-  console.log({ mesh });
   animationsCallback.push((time: number) => {
-    mesh.rotation.y = time / 3000;
+    sinAnimation({ mesh, time, min: -0.5, max: -0.55, duration: 400 });
   });
 }
 
 export function setHeartAnimation(mesh: THREE.Object3D<THREE.Event>) {
   animationsCallback.push((time: number) => {
-    sinAnimation({ mesh, time, min: 0.8, duration: 500 });
+    sinAnimation({ mesh, time, min: 0.9, duration: 500 });
     mesh.rotation.y = time / 500;
   });
 }
