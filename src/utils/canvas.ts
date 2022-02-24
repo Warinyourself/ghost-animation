@@ -11,6 +11,7 @@ import {
 } from "./animations";
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
+import { logPositionMesh } from "./helpers";
 
 let controls: any;
 let camera: Camera, scene: Scene, renderer: any;
@@ -39,9 +40,14 @@ export function init(canvas?: HTMLCanvasElement) {
     0.01,
     30
   );
-  // todo: set right camera position
-  camera.position.x = 3;
-  camera.position.y = 1;
+
+  camera.position.x = 10;
+  camera.position.x = 4.12;
+  camera.position.z = 0;
+
+  camera.rotation.x = 0;
+  camera.rotation.y = 1.57;
+  camera.rotation.z = 0;
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x999999);
@@ -55,22 +61,12 @@ export function init(canvas?: HTMLCanvasElement) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animation);
 
-  controls = new OrbitControls(camera, renderer.domElement);
-
-  controls.screenSpacePanning = false;
-  controls.minDistance = 2;
-  controls.maxDistance = 10;
-  controls.update();
-
-  controls.maxPolarAngle = Math.PI / 2.1;
-
   if (showParticles) {
     generateParticles(scene);
   }
 
   buildLight(scene);
 
-  const group = new THREE.Group();
   scene.add(group);
 
   const loader = new GLTFLoader().setPath("/");
@@ -92,9 +88,6 @@ export function init(canvas?: HTMLCanvasElement) {
     });
 
     setBreatheAnimation(group);
-
-    console.log({ group });
-    console.log({ child: gltf.scene.children });
   });
 
   if (!canvas) {
