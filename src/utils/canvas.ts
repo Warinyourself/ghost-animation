@@ -13,6 +13,19 @@ import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
 import { logPositionMesh } from "./helpers";
 
+let mouseX = 0;
+let mouseY = 0;
+const group = new THREE.Group();
+
+function onMouseMove(event: MouseEvent) {
+  event.preventDefault();
+
+  mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+  mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+}
+
+document.addEventListener("mousemove", onMouseMove, false);
+
 let controls: any;
 let camera: Camera, scene: Scene, renderer: any;
 const isDebugMode = true;
@@ -28,6 +41,11 @@ function animation(time: number) {
 
   if (showParticles) {
     particlesAnimate(time);
+  }
+
+  if (group) {
+    group.rotation.y = mouseX * 0.15;
+    group.rotation.z = mouseY * 0.15;
   }
 
   renderer.render(scene, camera);
