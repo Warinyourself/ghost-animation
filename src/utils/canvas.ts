@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import { Camera, Scene } from "three";
+import { Camera, Mesh, Scene } from "three";
 import { buildAxios, buildGrid } from "./position";
 import {
   animationsCallback,
@@ -15,7 +15,9 @@ import { buildGUI } from "./gui";
 
 let mouseX = 0;
 let mouseY = 0;
-const group = new THREE.Group();
+const groupGhost = new THREE.Group();
+let leftEyeMesh: Mesh, rightEyeMesh: Mesh;
+const ghostNames = ["Body", "eyeLeft", "eyeRight"];
 
 function onMouseMove(event: MouseEvent) {
   event.preventDefault();
@@ -42,9 +44,14 @@ function animation(time: number) {
     particlesAnimate(time);
   }
 
-  if (group) {
-    group.rotation.y = mouseX * 0.15;
-    group.rotation.z = mouseY * 0.15;
+  if (groupGhost) {
+    groupGhost.rotation.y = mouseX * 0.35;
+    groupGhost.rotation.z = mouseY * 0.35;
+  }
+
+  if (rightEyeMesh && leftEyeMesh) {
+    leftEyeMesh.rotation.y = rightEyeMesh.rotation.y = mouseX * 0.5;
+    leftEyeMesh.rotation.x = rightEyeMesh.rotation.x = mouseY * -0.5;
   }
 
   renderer.render(scene, camera);
@@ -58,7 +65,7 @@ export function init(canvas?: HTMLCanvasElement) {
     30
   );
 
-  camera.position.x = 10;
+  camera.position.y = 1;
   camera.position.x = 4.12;
   camera.position.z = 0;
 
@@ -85,27 +92,37 @@ export function init(canvas?: HTMLCanvasElement) {
 
   buildLight(scene);
 
-  scene.add(group);
-
   const loader = new GLTFLoader().setPath("/");
+  const ghostMeshes: Mesh[] = [];
 
   loader.load("Ghost.gltf", gltf => {
-    gltf.scene.children.forEach(mesh => {
+    gltf.scene.traverse(object => {
+      const mesh = object as Mesh;
       if (mesh.name === heartName) {
         setTimeout(() => {
           scene.add(mesh);
         });
         const heartSize = 0.15;
         setHeartAnimation(mesh);
-        mesh.scale.set(heartSize, heartSize, heartSize);
+        return mesh.scale.set(heartSize, heartSize, heartSize);
+      }
+
+      if (ghostNames.includes(mesh.name)) {
+        if (mesh.name === "eyeLeft") {
+          leftEyeMesh = mesh;
+        } else if (mesh.name === "eyeRight") {
+          rightEyeMesh = mesh;
+        }
+
+        ghostMeshes.push(mesh);
       } else {
-        setTimeout(() => {
-          group.add(mesh);
-        });
+        console.log({ name: mesh.name, type: mesh.type });
       }
     });
 
-    setBreatheAnimation(group);
+    setBreatheAnimation(groupGhost);
+    groupGhost.add(...ghostMeshes);
+    scene.add(groupGhost);
   });
 
   if (!canvas) {
