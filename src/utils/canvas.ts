@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-import { Camera, Scene, Mesh } from "three";
+import { Camera, Scene } from "three";
 import { buildAxios, buildGrid } from "./position";
 import {
   animationsCallback,
@@ -11,7 +11,7 @@ import {
 } from "./animations";
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
-import { logPositionMesh } from "./helpers";
+import { buildGUI } from "./gui";
 
 let mouseX = 0;
 let mouseY = 0;
@@ -26,7 +26,6 @@ function onMouseMove(event: MouseEvent) {
 
 document.addEventListener("mousemove", onMouseMove, false);
 
-let controls: any;
 let camera: Camera, scene: Scene, renderer: any;
 const isDebugMode = true;
 const showHelpers = false;
@@ -66,6 +65,7 @@ export function init(canvas?: HTMLCanvasElement) {
   camera.rotation.x = 0;
   camera.rotation.y = 1.57;
   camera.rotation.z = 0;
+  buildGUI(camera);
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x999999);
