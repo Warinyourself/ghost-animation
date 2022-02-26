@@ -1,8 +1,6 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-
-import { Camera, Mesh, Scene } from "three";
+import { Mesh, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import { buildAxios, buildGrid } from "./position";
 import {
   animationsCallback,
@@ -16,7 +14,7 @@ import { buildGUI } from "./gui";
 let mouseX = 0;
 let mouseY = 0;
 const groupGhost = new THREE.Group();
-let leftEyeMesh: Mesh, rightEyeMesh: Mesh;
+let leftEyeMesh: Mesh, rightEyeMesh: Mesh, nimbusMesh: any;
 const ghostNames = ["Body", "eyeLeft", "eyeRight"];
 
 function onMouseMove(event: MouseEvent) {
@@ -28,7 +26,7 @@ function onMouseMove(event: MouseEvent) {
 
 document.addEventListener("mousemove", onMouseMove, false);
 
-let camera: Camera, scene: Scene, renderer: any;
+let camera: PerspectiveCamera, scene: Scene, renderer: WebGLRenderer;
 const isDebugMode = true;
 const showHelpers = false;
 const showParticles = false;
@@ -115,14 +113,25 @@ export function init(canvas?: HTMLCanvasElement) {
         }
 
         ghostMeshes.push(mesh);
+      } else if (mesh.name === "Nimbus") {
+        nimbusMesh = mesh;
       } else {
         console.log({ name: mesh.name, type: mesh.type });
       }
     });
 
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    window.addEventListener("resize", onWindowResize);
+
     setBreatheAnimation(groupGhost);
     groupGhost.add(...ghostMeshes);
     scene.add(groupGhost);
+    console.log({ scene });
   });
 
   if (!canvas) {
