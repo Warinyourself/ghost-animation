@@ -4,6 +4,7 @@ import { redLightColor } from "./colors";
 const pointLights: THREE.PointLight[] = [];
 const position = 3;
 const timeDuration = 500;
+const particlesAmout = 3;
 const directions = ["x", "y", "z"] as const;
 const randomize = (min: number, max: number) =>
   Math.random() * (max - min) + min;
@@ -18,7 +19,7 @@ let randomTime: any[] = [];
 
 export function generateParticles(scene: THREE.Scene) {
   const sphere = new THREE.SphereGeometry(0.03, 16, 8);
-  for (let i = 0; i <= 8; i++) {
+  for (let i = 0; i < particlesAmout; i++) {
     const light = new THREE.PointLight(redLightColor, 0.8, 10);
     const meshLight = new THREE.Mesh(
       sphere,
