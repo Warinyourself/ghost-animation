@@ -80,6 +80,10 @@ function animation(time: number) {
     leftEyeMesh.rotation.y = rightEyeMesh.rotation.y = mouseX * 0.5;
     leftEyeMesh.rotation.x = rightEyeMesh.rotation.x = mouseY * -0.5;
   }
+  if (camera) {
+    camera.position.z = mouseX * -0.5;
+    camera.position.y = 1.57 + mouseY * 0.5;
+  }
 
   updateRender(time, window.innerWidth, window.innerHeight);
 }
