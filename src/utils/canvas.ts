@@ -10,6 +10,7 @@ import {
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
 import { buildPositionFolder } from "./gui";
+import { initPostprocessing, updateRender } from "./postprocessing";
 
 let mouseX = 0;
 let mouseY = 0;
@@ -17,7 +18,6 @@ const groupGhost = new THREE.Group();
 let leftEyeMesh: Mesh, rightEyeMesh: Mesh;
 let heartMesh: Mesh;
 const ghostNames = ["Body", "eyeLeft", "eyeRight"];
-
 groupGhost.userData.clickable = true;
 
 function onMouseMove(event: MouseEvent) {
@@ -81,7 +81,7 @@ function animation(time: number) {
     leftEyeMesh.rotation.x = rightEyeMesh.rotation.x = mouseY * -0.5;
   }
 
-  renderer.render(scene, camera);
+  updateRender(time, window.innerWidth, window.innerHeight);
 }
 
 export function init(canvas?: HTMLCanvasElement) {
@@ -107,7 +107,8 @@ export function init(canvas?: HTMLCanvasElement) {
     buildAxios(scene);
   }
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.autoClear = false;
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animation);
 
@@ -116,6 +117,7 @@ export function init(canvas?: HTMLCanvasElement) {
   }
 
   buildLight(scene);
+  initPostprocessing({ renderer, scene, camera });
 
   const loader = new GLTFLoader().setPath("/");
   const ghostMeshes: Mesh[] = [];
