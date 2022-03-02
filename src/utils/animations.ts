@@ -1,11 +1,13 @@
 import * as THREE from "three";
 
 type animationCallbackType = (time: number) => void;
-export const animationsCallback: animationCallbackType[] = [];
+export let animationsCallback: animationCallbackType[] = [];
 
 export function getAnimationsCallback() {
   return animationsCallback;
 }
+
+type DirectionType = "x" | "y" | "z";
 
 interface SinAnimationOptions {
   mesh: THREE.Object3D<THREE.Event>;
@@ -14,8 +16,9 @@ interface SinAnimationOptions {
   max?: number;
   duration?: number;
   property?: "position" | "rotation";
-  direction?: "x" | "y" | "z";
+  direction?: DirectionType;
 }
+
 export function sinAnimation({
   mesh,
   time,
@@ -30,15 +33,41 @@ export function sinAnimation({
   mesh[property][direction] = fromZeroToOne * (max - min) + min;
 }
 
-export function setBreatheAnimation(mesh: THREE.Object3D<THREE.Event>) {
+export function deleteAnimation(animation: animationCallbackType) {
+  const index = animationsCallback.lastIndexOf(animation);
+  animationsCallback = animationsCallback.slice(index, 1);
+}
+
+export function setRotationAnimation(
+  mesh: THREE.Object3D<THREE.Event>,
+  direction: DirectionType = "y",
+  divider = 1000
+) {
   animationsCallback.push((time: number) => {
-    sinAnimation({ mesh, time, min: -0.5, max: -0.55, duration: 400 });
+    mesh.rotation[direction] = time / divider;
   });
 }
 
 export function setHeartAnimation(mesh: THREE.Object3D<THREE.Event>) {
   animationsCallback.push((time: number) => {
-    sinAnimation({ mesh, time, min: 0.9, duration: 500 });
+    const direction = "y";
+    const position = mesh.position[direction];
+    const [min, max] = [position - 0.001, position + 0.001];
+
+    sinAnimation({
+      mesh,
+      time,
+      min,
+      max,
+      duration: 500,
+      direction
+    });
     mesh.rotation.y = time / 500;
+  });
+}
+
+export function setBreatheAnimation(mesh: THREE.Object3D<THREE.Event>) {
+  animationsCallback.push((time: number) => {
+    sinAnimation({ mesh, time, min: -0.5, max: -0.55, duration: 400 });
   });
 }

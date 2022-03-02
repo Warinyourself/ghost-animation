@@ -5,20 +5,22 @@ import { buildAxios, buildGrid } from "./position";
 import {
   animationsCallback,
   setBreatheAnimation,
-  setHeartAnimation
+  setRotationAnimation
 } from "./animations";
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
 import { buildPositionFolder } from "./gui";
 import { initPostprocessing, updateRender } from "./postprocessing";
+import { getRegularPolygonPoints } from "./helpers";
+import { buildOrbitControls } from "./controls";
 
 let mouseX = 0;
 let mouseY = 0;
-const groupGhost = new THREE.Group();
+const ghostGroup = new THREE.Group();
 let leftEyeMesh: Mesh, rightEyeMesh: Mesh;
 let heartMesh: Mesh;
 const ghostNames = ["Body", "eyeLeft", "eyeRight"];
-groupGhost.userData.clickable = true;
+ghostGroup.userData.clickable = true;
 
 function onMouseMove(event: MouseEvent) {
   event.preventDefault();
@@ -32,6 +34,7 @@ document.addEventListener("mousemove", onMouseMove, false);
 let camera: PerspectiveCamera, scene: Scene, renderer: WebGLRenderer;
 const isDebugMode = true;
 const showHelpers = false;
+const showControls = true;
 const showParticles = true;
 const heartName = "Heart";
 const raycaster = new THREE.Raycaster();
@@ -71,16 +74,16 @@ function animation(time: number) {
     particlesAnimate(time);
   }
 
-  if (groupGhost) {
-    groupGhost.rotation.y = mouseX * 0.35;
-    groupGhost.rotation.z = mouseY * 0.35;
+  if (ghostGroup) {
+    ghostGroup.rotation.y = mouseX * 0.35;
+    ghostGroup.rotation.z = mouseY * 0.35;
   }
 
   if (rightEyeMesh && leftEyeMesh) {
     leftEyeMesh.rotation.y = rightEyeMesh.rotation.y = mouseX * 0.5;
     leftEyeMesh.rotation.x = rightEyeMesh.rotation.x = mouseY * -0.5;
   }
-  if (camera) {
+  if (camera && !showControls) {
     camera.position.z = mouseX * -0.5;
     camera.position.y = 1.57 + mouseY * 0.5;
   }
@@ -116,6 +119,10 @@ export function init(canvas?: HTMLCanvasElement) {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setAnimationLoop(animation);
 
+  if (showControls) {
+    buildOrbitControls(camera, renderer);
+  }
+
   if (showParticles) {
     generateParticles(scene);
   }
@@ -139,8 +146,6 @@ export function init(canvas?: HTMLCanvasElement) {
         }
 
         ghostMeshes.push(mesh);
-      } else {
-        console.log({ name: mesh.name, type: mesh.type });
       }
     });
 
@@ -152,61 +157,54 @@ export function init(canvas?: HTMLCanvasElement) {
 
     window.addEventListener("resize", onWindowResize);
 
-    groupGhost.add(...ghostMeshes);
-    setBreatheAnimation(groupGhost);
-    scene.add(groupGhost);
+    ghostGroup.add(...ghostMeshes);
+    setBreatheAnimation(ghostGroup);
+    scene.add(ghostGroup);
 
-    const coords = [
-      {
-        x: 1.4,
-        y: 0.25,
-        z: 0.5,
-        material: new THREE.MeshStandardMaterial({
-          color: new THREE.Color("#3FC1C9"),
-          roughness: 0.35,
-          metalness: 0.15
-        })
-      },
-      {
-        x: -0.51,
-        size: 0.4,
-        y: 2.86,
-        z: -3.43,
-        color: new THREE.Color("#FC5185")
-      },
-      {
-        x: 2.63,
-        y: 0.05,
-        z: -1.75,
-        size: 0.3,
-        color: new THREE.Color("#A267AC")
-      },
-      {
-        x: 0.5,
-        y: 1.5,
-        size: 0.3,
-        z: 5,
-        color: new THREE.Color("#3282B8")
-      }
+    const colors = [
+      new THREE.Color("#3FC1C9"),
+      new THREE.Color("#FC5185"),
+      new THREE.Color("#A267AC"),
+      new THREE.Color("#3282B8")
     ];
 
-    for (let i = 0; i < 4; i++) {
-      const coord = coords[i];
-      const defaultMaterial = new THREE.MeshStandardMaterial({
-        color: coord.color,
-        roughness: 0.35,
-        metalness: 0.55
-      });
-      const { x, y, z, material, size } = {
-        size: 0.15,
-        material: defaultMaterial,
-        ...coord
-      };
+    const [x, y, z] = [0, 0, 2.05];
+    const heartAmout = 12;
+    const nimbusRadius = 0.65;
+    const positions = getRegularPolygonPoints([x, y], heartAmout, nimbusRadius);
+    const nimbusGroup = new THREE.Group();
+
+    function createHeart(
+      position: [number, number, number],
+      size: number,
+      material: THREE.Material
+    ) {
+      const [x, y, z] = position;
+
       const heart = new THREE.Mesh(heartMesh.geometry, material);
       heart.scale.set(size, size, size);
-      heart.position.set(x, y, z);
-      scene.add(heart);
+      heart.position.set(y, x, z);
+      return heart;
     }
+
+    const defaultMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#FC5185"),
+      roughness: 0.35,
+      metalness: 0.55
+    });
+
+    scene.add(createHeart([0.05, 1.4, 0.25], 0.18, defaultMaterial));
+
+    positions.forEach(position => {
+      const [x, y] = position;
+      const size = 0.04;
+      const heart = createHeart([z, x, y], size, defaultMaterial);
+      setRotationAnimation(heart, "y", 300);
+      nimbusGroup.add(heart);
+    });
+
+    setRotationAnimation(nimbusGroup, "y", 3000);
+    ghostGroup.add(nimbusGroup);
   });
 
   if (!canvas) {
