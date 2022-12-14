@@ -130,6 +130,10 @@ function animation(time: number) {
   updateRender(time, window.innerWidth, window.innerHeight);
 }
 
+const blurMaterial = new THREE.MeshPhysicalMaterial({
+  roughness: 0.5,
+  transmission: 1
+});
 const textureLoader = new THREE.TextureLoader();
 const normalMapTexture = textureLoader.load("../../public/normal.jpg");
 normalMapTexture.wrapS = THREE.RepeatWrapping;
@@ -162,7 +166,7 @@ const buildNimbus = () => {
     metalness: 0.55
   });
 
-  scene.add(createHeart([0.05, 1.4, 0.25], 0.18, defaultMaterial));
+  scene.add(createHeart([0.05, 1.4, 0.25], 0.18, blurMaterial));
 
   positions.forEach(position => {
     const [x, y] = position;
@@ -190,7 +194,6 @@ export function init(canvas?: HTMLCanvasElement) {
   camera.lookAt(-10, 0, 0);
 
   buildGUI(camera);
-  // buildPositionFolder(camera, "camera");
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
@@ -235,6 +238,11 @@ export function init(canvas?: HTMLCanvasElement) {
           leftEyeMesh = mesh;
         } else if (mesh.name === "eyeRight") {
           rightEyeMesh = mesh;
+          console.log({ mesh });
+        } else if (mesh.name === "Body") {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          mesh.children.forEach(child => (child.material = ghostMaterial));
         }
 
         ghostMeshes.push(mesh);
