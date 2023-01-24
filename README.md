@@ -1,3 +1,3 @@
-<a target="_blank" href="https://warinyourself.github.io/Warinyourself/"><img src="https://user-images.githubusercontent.com/33872448/102024951-f2f56a00-3da5-11eb-8ec2-0d83572d5346.gif"/></a>
+# Ghost with threejs
 
-<img src="https://github-readme-stats.vercel.app/api?username=warinyourself&show_icons=true&title_color=00AEFF&icon_color=2DDE98&text_color=FFFFFF&bg_color=050F2C&hide_border=true"/>
+![image](https://user-images.githubusercontent.com/83131232/214435699-aaa7e8cd-e1a2-44f6-9082-d14cfd000fd3.png)
