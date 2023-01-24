@@ -17,7 +17,7 @@ export function initPostprocessing({
   renderer,
   scene,
   camera
-}: PostprocessingInterface) {
+}: PostprocessingInterface): void {
   const renderScene = new RenderPass(scene, camera);
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -27,7 +27,7 @@ export function initPostprocessing({
   );
 
   bloomPass.threshold = 0;
-  bloomPass.strength = 0.2;
+  bloomPass.strength = 0.3;
   bloomPass.radius = 0;
   composer = new EffectComposer(renderer);
   composer.setSize(window.innerWidth, window.innerHeight);
@@ -36,7 +36,11 @@ export function initPostprocessing({
   composer.addPass(bloomPass);
 }
 
-export function updateRender(time: number, width: number, height: number) {
+export function updateRender(
+  time: number,
+  width: number,
+  height: number
+): void {
   composer.render(time);
   composer.setSize(width, height);
 }

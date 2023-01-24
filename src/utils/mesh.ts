@@ -12,11 +12,11 @@ export function createMesh({
   position,
   size,
   material
-}: CreateMeshOptions) {
+}: CreateMeshOptions): THREE.Mesh {
   const [x, y, z] = position;
 
   const item = new THREE.Mesh(mesh.geometry, material);
   item.scale.set(size, size, size);
-  item.position.set(y, x, z);
+  item.position.set(x, y, z);
   return item;
 }

@@ -66,8 +66,22 @@ export function setHeartAnimation(mesh: THREE.Object3D<THREE.Event>) {
   });
 }
 
-export function setBreatheAnimation(mesh: THREE.Object3D<THREE.Event>) {
+interface BreatheAnimatoinOptions {
+  mesh: THREE.Object3D<THREE.Event>;
+  min?: number;
+  max?: number;
+  duration?: number;
+}
+
+export function setBreatheAnimation(options: BreatheAnimatoinOptions): void {
+  const { min, max, mesh, duration } = {
+    min: -0.5,
+    max: -0.55,
+    duration: 400,
+    ...options
+  };
+
   animationsCallback.push((time: number) => {
-    sinAnimation({ mesh, time, min: -0.5, max: -0.55, duration: 400 });
+    sinAnimation({ mesh, time, min, max, duration });
   });
 }

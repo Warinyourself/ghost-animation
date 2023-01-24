@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { redLightColor } from "./colors";
+import { blueLight } from "./colors";
 
 const pointLights: THREE.PointLight[] = [];
 const position = 3;
@@ -20,10 +20,10 @@ let randomTime: any[] = [];
 export function generateParticles(scene: THREE.Scene) {
   const sphere = new THREE.SphereGeometry(0.03, 16, 8);
   for (let i = 0; i < particlesAmout; i++) {
-    const light = new THREE.PointLight(redLightColor, 0.8, 10);
+    const light = new THREE.PointLight(blueLight, 0.2, 10);
     const meshLight = new THREE.Mesh(
       sphere,
-      new THREE.MeshBasicMaterial({ color: redLightColor })
+      new THREE.MeshBasicMaterial({ color: blueLight })
     );
     light.add(meshLight);
 

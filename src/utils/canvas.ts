@@ -2,33 +2,37 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Mesh, Object3D, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import { buildAxios, buildGrid } from "./position";
-import {
-  animationsCallback,
-  setBreatheAnimation,
-  setRotationAnimation
-} from "./animations";
+import { animationsCallback, setBreatheAnimation } from "./animations";
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
 import { buildGUI } from "./gui";
 
 import { initPostprocessing, updateRender } from "./postprocessing";
-import { getRegularPolygonPoints } from "./helpers";
 import { buildOrbitControls } from "./controls";
 import { createMesh, CreateMeshOptions } from "./mesh";
+import { createSkyBox } from "./skybox";
+import { blueLight } from "./colors";
 
+const file = "Ghost.gltf";
 let mouseX = 0;
 let mouseY = 0;
 const ghostGroup = new THREE.Group();
 let leftEyeMesh: Mesh, rightEyeMesh: Mesh;
 let heartMesh: Mesh;
 const ghostNames = ["Body", "eyeLeft", "eyeRight"];
+const isDeveloperMode = process.env.NODE_ENV === "development";
+const isDebugMode = isDeveloperMode;
+const showControls = isDeveloperMode;
+const showHelpers = false;
+const showParticles = true;
+const heartName = "Heart";
 ghostGroup.userData.clickable = true;
 
-const createHeart = (
-  position: CreateMeshOptions["position"],
-  size: CreateMeshOptions["size"],
-  material: CreateMeshOptions["material"]
-) => {
+const createHeart = ({
+  position,
+  size,
+  material
+}: Omit<CreateMeshOptions, "mesh">) => {
   return createMesh({
     mesh: heartMesh,
     position,
@@ -47,11 +51,6 @@ function onMouseMove(event: MouseEvent) {
 document.addEventListener("mousemove", onMouseMove, false);
 
 let camera: PerspectiveCamera, scene: Scene, renderer: WebGLRenderer;
-const isDebugMode = true;
-const showHelpers = false;
-const showControls = true;
-const showParticles = true;
-const heartName = "Heart";
 const raycaster = new THREE.Raycaster();
 const clickMouse = new THREE.Vector2();
 
@@ -70,36 +69,12 @@ function onClick(event: MouseEvent) {
     const lastObject = found.pop()?.object;
     const isClickable = lastObject && lastObject.userData.clickable;
     const isGhost = lastObject && lastObject.name === "Body_1";
+    console.log({ found, name: found[0]?.object.name });
 
     if (isClickable || isGhost) {
       console.log(`found draggable ${found}`);
     }
   }
-}
-
-const skyboxImage = "purplenebula";
-let skyboxGeo, skybox;
-
-function createPathStrings(filename: string) {
-  const basePath = `https://raw.githubusercontent.com/codypearce/some-skyboxes/master/skyboxes/${filename}/`;
-  const baseFilename = basePath + filename;
-  const fileType = ".png";
-  const sides = ["ft", "bk", "up", "dn", "rt", "lf"];
-  const pathStings = sides.map(side => {
-    return baseFilename + "_" + side + fileType;
-  });
-
-  return pathStings;
-}
-
-function createMaterialArray(filename: string) {
-  const skyboxImagepaths = createPathStrings(filename);
-  const materialArray = skyboxImagepaths.map(image => {
-    const texture = new THREE.TextureLoader().load(image);
-
-    return new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
-  });
-  return materialArray;
 }
 
 document.addEventListener("click", onClick, false);
@@ -130,54 +105,53 @@ function animation(time: number) {
   updateRender(time, window.innerWidth, window.innerHeight);
 }
 
-const blurMaterial = new THREE.MeshPhysicalMaterial({
-  roughness: 0.5,
-  transmission: 1
-});
 const textureLoader = new THREE.TextureLoader();
 const normalMapTexture = textureLoader.load("../../public/normal.jpg");
 normalMapTexture.wrapS = THREE.RepeatWrapping;
 normalMapTexture.wrapT = THREE.RepeatWrapping;
 
-const ghostMaterial = new THREE.MeshPhysicalMaterial({
+const blurMaterial = new THREE.MeshPhysicalMaterial({
   roughness: 0.5,
-  transmission: 0.9,
-  normalMap: normalMapTexture,
-  clearcoatNormalMap: normalMapTexture
+  transmission: 1
 });
+const colors = [
+  new THREE.Color("#3FC1C9"),
+  new THREE.Color("#FC5185"),
+  new THREE.Color("#A267AC"),
+  new THREE.Color("#3282B8")
+];
 
 const buildNimbus = () => {
-  const colors = [
-    new THREE.Color("#3FC1C9"),
-    new THREE.Color("#FC5185"),
-    new THREE.Color("#A267AC"),
-    new THREE.Color("#3282B8")
+  const buildMetalMaterial = (color?: THREE.Color) =>
+    new THREE.MeshStandardMaterial({
+      color: color || new THREE.Color(blueLight),
+      roughness: 0.2,
+      metalness: 0.9
+    });
+
+  const hearts: Array<Omit<CreateMeshOptions, "mesh">> = [
+    {
+      position: [2.8, 0.05, 1.3],
+      size: 0.32,
+      material: buildMetalMaterial(colors[1])
+    },
+    {
+      position: [-2.3, 1.15, -2.76],
+      size: 0.72,
+      material: buildMetalMaterial()
+    },
+    {
+      position: [1.4, 0.05, 0.25],
+      size: 0.18,
+      material: blurMaterial
+    }
   ];
 
-  const [x, y, z] = [0, 0, 2.05];
-  const heartAmout = 12;
-  const nimbusRadius = 0.65;
-  const positions = getRegularPolygonPoints([x, y], heartAmout, nimbusRadius);
-  const nimbusGroup = new THREE.Group();
-
-  const defaultMaterial = new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#FC5185"),
-    roughness: 0.35,
-    metalness: 0.55
-  });
-
-  scene.add(createHeart([0.05, 1.4, 0.25], 0.18, blurMaterial));
-
-  positions.forEach(position => {
-    const [x, y] = position;
-    const size = 0.04;
-    const heart = createHeart([z, x, y], size, defaultMaterial);
-    setRotationAnimation(heart, "y", 300);
-    nimbusGroup.add(heart);
-  });
-
-  setRotationAnimation(nimbusGroup, "y", 3000);
-  ghostGroup.add(nimbusGroup);
+  if (heartMesh) {
+    const heartMeshed = hearts.map(createHeart);
+    scene.add(...heartMeshed);
+    buildGUI({ camera, meshes: heartMeshed });
+  }
 };
 
 export function init(canvas?: HTMLCanvasElement) {
@@ -193,8 +167,6 @@ export function init(canvas?: HTMLCanvasElement) {
   camera.rotation.y = 1.57;
   camera.lookAt(-10, 0, 0);
 
-  buildGUI(camera);
-
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
 
@@ -206,13 +178,10 @@ export function init(canvas?: HTMLCanvasElement) {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.autoClear = false;
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setAnimationLoop(animation);
 
-  const materialArray = createMaterialArray(skyboxImage);
-  skyboxGeo = new THREE.BoxGeometry(10, 10, 10);
-  skybox = new THREE.Mesh(skyboxGeo, materialArray);
-
-  scene.add(skybox);
+  scene.add(createSkyBox());
 
   if (showControls) {
     buildOrbitControls(camera, renderer);
@@ -228,7 +197,7 @@ export function init(canvas?: HTMLCanvasElement) {
   const loader = new GLTFLoader().setPath("/");
   const ghostMeshes: Object3D[] = [];
 
-  loader.load("Ghost.gltf", gltf => {
+  loader.load(file, gltf => {
     gltf.scene.traverse(object => {
       const mesh = object as Mesh;
       if (mesh.name === heartName) {
@@ -238,11 +207,6 @@ export function init(canvas?: HTMLCanvasElement) {
           leftEyeMesh = mesh;
         } else if (mesh.name === "eyeRight") {
           rightEyeMesh = mesh;
-          console.log({ mesh });
-        } else if (mesh.name === "Body") {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          mesh.children.forEach(child => (child.material = ghostMaterial));
         }
 
         ghostMeshes.push(mesh);
@@ -257,8 +221,22 @@ export function init(canvas?: HTMLCanvasElement) {
 
     window.addEventListener("resize", onWindowResize);
 
+    const geometry = new THREE.TorusGeometry(0.6, 0.04, 24, 100);
+    const material = new THREE.MeshBasicMaterial({ color: blueLight });
+    const torus = new THREE.Mesh(geometry, material);
+    torus.name = "torus";
+
+    const light = new THREE.PointLight(blueLight, 0.1, 100);
+    light.add(torus);
+    light.rotation.x = Math.PI / 2;
+    light.position.y = 2.07;
+
+    scene.add(light);
+
+    ghostMeshes.push(light);
+
     ghostGroup.add(...ghostMeshes);
-    setBreatheAnimation(ghostGroup);
+    setBreatheAnimation({ mesh: ghostGroup });
     scene.add(ghostGroup);
     buildNimbus();
   });
