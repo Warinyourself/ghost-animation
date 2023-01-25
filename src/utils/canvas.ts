@@ -5,8 +5,7 @@ import { buildAxios, buildGrid } from "./position";
 import { animationsCallback, setBreatheAnimation } from "./animations";
 import { generateParticles, particlesAnimate } from "./particles";
 import { buildLight } from "./light";
-import { buildGUI } from "./gui";
-
+import { vertex, fragment } from "./shader";
 import { initPostprocessing, updateRender } from "./postprocessing";
 import { buildOrbitControls } from "./controls";
 import { createMesh, CreateMeshOptions } from "./mesh";
@@ -27,6 +26,11 @@ const showHelpers = false;
 const showParticles = true;
 const heartName = "Heart";
 ghostGroup.userData.clickable = true;
+
+const uniforms = {
+  uResolution: { value: { x: window.innerWidth, y: window.innerHeight } },
+  uTime: { value: 0.0 }
+};
 
 const createHeart = ({
   position,
@@ -79,8 +83,15 @@ function onClick(event: MouseEvent) {
 
 document.addEventListener("click", onClick, false);
 
+const ShaderMaterial = new THREE.ShaderMaterial({
+  uniforms,
+  vertexShader: vertex,
+  fragmentShader: fragment
+});
+
 function animation(time: number) {
   time += 0.01;
+  uniforms.uTime.value += 0.005;
 
   animationsCallback.forEach(callback => callback(time));
 
@@ -126,14 +137,14 @@ const buildNimbus = () => {
     new THREE.MeshStandardMaterial({
       color: color || new THREE.Color(blueLight),
       roughness: 0.2,
-      metalness: 0.9
+      metalness: 1
     });
 
   const hearts: Array<Omit<CreateMeshOptions, "mesh">> = [
     {
       position: [2.8, 0.05, 1.3],
       size: 0.32,
-      material: buildMetalMaterial(colors[1])
+      material: ShaderMaterial
     },
     {
       position: [-2.3, 1.15, -2.76],
@@ -150,7 +161,6 @@ const buildNimbus = () => {
   if (heartMesh) {
     const heartMeshed = hearts.map(createHeart);
     scene.add(...heartMeshed);
-    buildGUI({ camera, meshes: heartMeshed });
   }
 };
 
@@ -162,9 +172,8 @@ export function init(canvas?: HTMLCanvasElement) {
     30
   );
 
-  camera.position.y = 1;
-  camera.position.x = 4.12;
-  camera.rotation.y = 1.57;
+  camera.position.x = 5.12;
+  camera.position.y = 1.12;
   camera.lookAt(-10, 0, 0);
 
   scene = new THREE.Scene();
